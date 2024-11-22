@@ -1,0 +1,76 @@
+<h1>HTML UI In the Source SDK</h1>
+<p>Required shit</p>
+<ul>
+  <li>Source 2013</li>
+  <li>Knowledge of how to mod in src13 and vgui</li>
+</ul>
+<p>I've heard you could do it with</p><a href="https://developer.valvesoftware.com/wiki/Implementing_Awesomium">Awesomium</a><p> But its kinda messy from what i have heard so we will be using CEF instead because it comes pre-installed with src13 so we will be using that</p>
+<p>The first thing you want to do is download these two files</p> <a href"https://raw.githubusercontent.com/ThePixelMoon/OpenMod/refs/heads/main/src/game/client/openmod/basemenu.h">basemenu.h </a> <a href="https://raw.githubusercontent.com/ThePixelMoon/OpenMod/refs/heads/main/src/game/client/openmod/basemenu.cpp">and basemenu.cpp</a> <p> and add these files to VPC (client)</p>
+<p>Now you will need to do some fuckery with cdll_client_int.cpp so here is what you will need to do:</p>
+<ul>
+<li>first you need to include the "basemenu.h" file so add the line #include "basemenu.h" under #include "cbase.h"</li>
+<li>second in line 255 add RootPanel          	*IBaseMenu;</li>
+<li>next in line 888 add the following lines of code</li>
+  <p>
+    if ( CommandLine()->FindParm( "-gameui" ) == 0 )
+	{
+		if ( !IBaseMenu )
+		{
+			OverrideUI->Create( NULL );
+			IBaseMenu = OverrideUI->GetMenuBase();
+			OverrideRootUI();
+		}
+	}
+  </p>
+<li>next in line 1219 add the following code</li>
+  <p>if ( IBaseMenu )
+  	{
+    	IBaseMenu->~RootPanel();
+  	}
+  </p>
+<li>next in line 1675 add the following code</li>
+  <p>IBaseMenu->m_pHTMLPanel->RunJavascript("togglevisible(true);");
+	IBaseMenu->m_pHTMLPanel->RequestFocus();</p>
+<li>in line 1730 add the following code</li>
+<p>
+  IBaseMenu->m_pHTMLPanel->RunJavascript("togglevisible(false);");
+	IBaseMenu->m_pHTMLPanel->RequestFocus();
+</p>
+  <li> now in gameinfo.txt remove the title and create an html main menu in an html/ folder in your game/gamename directory</li>
+  <li>in HTML.cpp line 18 add #include "../../game/client/cdll_client_int.h"</li>
+  <li>in line 1220 add RequestFocus();</li>
+  <li>remove 1731-1734 then add the following code</li>
+  <p>// check if alert
+    if (strstr(pCmd->pchMessage, "cmd:") == pCmd->pchMessage)
+    {
+        const char* command = pCmd->pchMessage + 4;
+		if (command && strlen(command) > 0)
+		{
+			engine->ClientCmd_Unrestricted(command);
+			RequestFocus();
+		}
+		RequestFocus();
+    }
+    else
+    {
+        MessageBox* pDlg = new MessageBox(m_sCurrentURL, (const char*)pCmd->pchMessage, this);
+        pDlg->AddActionSignalTarget(this);
+        pDlg->SetCommand(new KeyValues("DismissJSDialog", "result", false));
+        pDlg->DoModal();
+    }
+	RequestFocus();</p>
+  <li>Finally in Panel.cpp line 47 add #include "cdll_int.h"</li>
+</ul>
+
+<h2>Extras</h2>
+<ul>
+  <li>in cdll_client_int.cpp line 899 add IBaseMenu->m_pHTMLPanel->RunJavascript("modifybg(false);");</li>
+  <li>in line 1679 add IBaseMenu->m_pHTMLPanel->RunJavascript("modifybg(true);");</li>
+  <li>in line 1735 IBaseMenu->m_pHTMLPanel->RunJavascript("modifybg(false);");</li>
+</ul>
+<h2>Credits</h2>
+<ul>
+  <li>GuestSneezePlayZ- Creator of the guide</li>
+  <li>Yourlocalmoon- creator of the code</li>
+  <li>Tingtom for inspiration by his guide</li>
+</ul>
