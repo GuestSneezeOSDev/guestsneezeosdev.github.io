@@ -1,0 +1,150 @@
+<h1>ARGG/Garrys mod Physics Gun implementation</h1>
+<p>To implement the ARGG physics gun to your half-life 2 mod its actually very simple here is what you need to do:</p>
+<ul>
+  <li>If your mod is based on Portal use <a href="https://gist.github.com/GuestSneezeOSDev/9e20d435653e5e5470a009c0c986c100">this version of the physics gun</a></li>
+  <li>If your mod is based on Half-Life: Source use <a href="https://gist.github.com/GuestSneezeOSDev/ba6bff681f2bde79496b88b0383dee37"> this version of the physics gun</a></li>
+  <li>If your mod is based on Half-Life 2 use <a href=""></a></li>
+</ul>
+<p>go to c_baseplayer.cpp and in line 240 add</p>
+<code>
+     // adnan
+		// get the use angles
+		RecvPropVector		( RECVINFO( m_vecUseAngles ) ),
+		// end adnan
+</code>
+<p>in line 298 add</p>
+<code>
+  // adnan
+		// get the use angles
+		RecvPropVector		( RECVINFO( m_vecUseAngles ) ),
+		// end adnan
+</code>
+<p>in line 1401 add</p>
+<code>
+  #ifdef ARGG
+	// adnan
+	// OVERRIDING THE VIEW
+	// need to override the angles too
+	C_BaseCombatWeapon *pWeapon = GetActiveWeapon();
+	if ( pWeapon )
+	{
+		// adnan
+		if(pWeapon->OverrideViewAngles()) {
+			// use the useAngles!
+				// override with the angles the server sends to us as useAngles
+				// use the useAngles only if we're holding and rotating with the grav gun
+			pSetup->angles = m_vecUseAngles;
+		}
+	}
+	// end adnan
+#endif
+</code>
+<p>in c_baseplayer.h in line 439 add</p>
+<code>
+  // adnan
+	// store the use angles
+	// set when the player presses use
+	QAngle		m_vecUseAngles;
+	// end adnan
+</code>
+<p>in clientmode_shared.cpp in line 511 add</p>
+<code>
+  //-----------------------------------------------------------------------------
+// Purpose: Allow weapons to override mouse input to view angles (for orbiting)
+//-----------------------------------------------------------------------------
+// adnan
+// control the mouse input in the grav gun through this
+bool ClientModeShared::OverrideViewAngles( void )
+{
+	C_BaseCombatWeapon *pWeapon = GetActiveWeapon();
+	if ( pWeapon )
+	{
+		// adnan
+		return pWeapon->OverrideViewAngles();
+	}
+	return false;
+}
+// end adnan
+#endif
+</code>
+<p>in clientmode_shared.h line 89 add</p>
+<code>
+  // adnan
+	// does this weapon need to override the view angles?
+	virtual bool	OverrideViewAngles( void );
+	// end adnan
+</code>
+<p>open c_hl2mp_player.cpp and in line 18 add #include "iclientmode.h"</p>
+<p>in hud.cpp line 390 add</p>
+<code>
+  m_bSkipClear = false;
+</code>
+<p>in line 1184 (under gHUD.m_iKeyBits &= (~(IN_WEAPON1|IN_WEAPON2));) the following code</p>
+<code>
+  #else
+	if ( !gHUD.m_bSkipClear )
+	{
+		// clear the weapon bits.
+		gHUD.m_iKeyBits &= (~(IN_WEAPON1|IN_WEAPON2));
+	}
+</code>
+<p>in hud.h line 167 add</p>
+<code>
+  bool						m_bSkipClear;
+</code>
+<p>in iclientmode.h line 89 add</p>
+<code>
+  // adnan
+	// does this weapon need to override the view angles?
+	virtual bool	OverrideViewAngles( void ) = 0;
+	// end adnan
+</code>
+<p>in in_mouse.cpp line 689 add</p>
+<code>
+  // adnan
+	// only set the new viewangles if we're not supposed to override them
+	if( !(g_pClientMode->OverrideViewAngles()) )
+	{
+</code>
+<p>in line 697 add</p>
+<code>
+  } 
+	// end adnan
+</code>
+<p>in player.cpp line 421</p>
+<code>
+  // adnan
+	// set the use angles
+	// set when the player presses use
+	DEFINE_FIELD( m_vecUseAngles, FIELD_VECTOR ),
+	// end adnan
+</code>
+<p>in line 7979</p>
+<code>
+  // adnan
+		// send the use angles
+		// set when the player presses use
+		SendPropVector		( SENDINFO( m_vecUseAngles), 0, SPROP_NOSCALE ),
+		// end adnan
+</code>
+<p>in player.h line 1128</p>
+<code>
+  public:
+	// adnan
+	// send the use angles for the current player... set when they press use
+	// UPDATE: this could be improved somehow by only storing these on the server side
+	//  - set a flag on the client and send that, stating that the viewangles shouldnt change
+	//  - ... maybe not
+	CNetworkQAngle( m_vecUseAngles );
+	// end adnan
+private:
+</code>
+<p>in basecombatweapon_shared.h line 515 add</p>
+<code>
+  // adnan
+	// does this weapon need to override the setting of view angles?
+	virtual bool			OverrideViewAngles( void ) { return false; };
+	// end adnan
+</code>
+<p>Finally add the physics gun to vpc and rebuild your project you should now have a rotational physics gun</p>
+<p>(make sure to have weapon_physgun.txt)</p>
